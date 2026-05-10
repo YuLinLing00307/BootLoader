@@ -1,0 +1,23 @@
+# 编译输出 - Keil MDK
+/MDK-ARM/BootLoader/
+/MDK-ARM/RTE/
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.bin
+*.map
+*.lst
+*.htm
+*.dep
+*.bak
+
+# IDE 配置（可以不分享个人设置）
+.vscode/
+.idea/
+
+# 临时文件
+*.swp
+*.swo
+*~
