@@ -10,17 +10,23 @@ uint32_t flash_write_offset = 0;
 uint8_t last_end_byte = 0;
 uint8_t last_end_byte_flag = 0;
 
-void Int_BootLoader_Init(void)
+// 记录本次数据接收的时间,用来判断是否接收完成
+uint32_t last_rec_time = 0;
+
+void Int_BootLoader_Erase_Flash(uint32_t page_addr,uint16_t pages)
 {
     HAL_FLASH_Unlock();
     FLASH_EraseInitTypeDef erase_init;
-    erase_init.TypeErase    = FLASH_TYPEERASE_PAGES; // 擦除类型 页擦除
+    erase_init.TypeErase    = FLASH_TYPEERASE_PAGES;  // 擦除类型 页擦除
     erase_init.Banks        = FLASH_BANK_1;           // 擦除哪个FLASH BANK.只有BANK1
-    erase_init.NbPages      = 10;                       // 擦除页的数量,这里只需要擦除一页
-    erase_init.PageAddress  = APP_FLASH_START_ADDR;       // 页起始地址
-    HAL_FLASHEx_Erase(&erase_init,NULL);           // 比较耗费性能
+    erase_init.NbPages      = pages;                  // 擦除页的数量,这里只需要擦除一页
+    erase_init.PageAddress  = page_addr;              // 页起始地址
+    HAL_FLASHEx_Erase(&erase_init,NULL);              // 比较耗费性能
     HAL_FLASH_Lock();
+}
 
+void Int_BootLoader_Init(void)
+{
     // 清空掉串口初始化使用之前的所有问题
     __HAL_UART_CLEAR_OREFLAG(&huart1);
     __HAL_UART_CLEAR_IDLEFLAG(&huart1);
@@ -29,7 +35,7 @@ void Int_BootLoader_Init(void)
     HAL_UARTEx_ReceiveToIdle_IT(&huart1,uart_rec_buff,BOOTLOADER_UART_REC_BUFF_LEN);
 }
 
-static void Int_BootLoader_Erase_Flash(void)
+static void Int_BootLoader_Check_Erase_Flash(void)
 {
     // 2.1 遍历需要写入的地址 长度为当前接收的数据长度 如果全部内容都是0xFF 则说明已经擦除过了
     uint8_t need_erased = 0;
@@ -153,12 +159,13 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         // 保存接收到的数据长度
         uart_rec_len = Size;
         uart_rec_full_len += Size;
+        last_rec_time = HAL_GetTick();
         
         // 1.解锁Flash
         HAL_FLASH_Unlock();
 
         // 2.擦除Flash.
-        Int_BootLoader_Erase_Flash();
+        Int_BootLoader_Check_Erase_Flash();
 
         // 3. 完成flash内容写入 -> 使用16位写入(半字)
         Int_BootLoader_Write_Flash();
@@ -174,29 +181,36 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     }
 }
 /*-----------------------------------------------------------------------------------------*/
-void Int_BootLoader_Jump_to_App(void)
+uint8_t Int_BootLoader_Jump_to_App(void)
 {
     // 1.健壮性判断
     // 1.1校验栈顶指针->Keil中IRAM1 Start是0x2000 0000 Size是0x10000.
     uint32_t app_stack_ptr = *(volatile uint32_t*)(APP_FLASH_START_ADDR);
     if(app_stack_ptr < APP_STACK_START_ADDR || app_stack_ptr > APP_STACK_START_ADDR+APP_STACK_SIZE)
     {
-        return;
+        return 1;
     }
 
     // 1.2判断复位中断处理函数的位置，向量表是一张“跳转地址表”，每个表项存的是 ISR 的入口地址.这里获取的是复位中断向量所指向的值，即复位中断处理函数的入口地址
     uint32_t app_reset_handle = *(volatile uint32_t*)(APP_FLASH_START_ADDR+4); // 栈顶地址后面紧跟着中断向量表,表里面存储着ISR的入口地址
     if(app_reset_handle < APP_FLASH_START_ADDR || app_reset_handle > APP_FLASH_END_ADDR)
     {
-        return;
+        return 1;
     }
 
     // 2.注销BootLoader程序
-    // 2.1 关闭B程序中断，避免跳转回来
-    __disable_fiq();
+    NVIC_DisableIRQ(USART1_IRQn);
+
+    // 关闭Systick系统滴答定时器
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL = 0;
     
     // 注销HAL库的设置
-    HAL_DeInit();
+    HAL_DeInit(); // 注销对外设的配置,不会注销内核
+
+    // 2.1 关闭B程序中断.
+    __disable_irq();
 
     // 2.2 重设置堆栈指针
     __set_MSP(app_stack_ptr);
@@ -213,5 +227,7 @@ void Int_BootLoader_Jump_to_App(void)
 
     // 3.3调用跳转
     App_Reset_Handle();
+
+    return 0;
 }
 

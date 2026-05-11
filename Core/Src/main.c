@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Int_BootLoader.h"
+#include "App_BootLoader.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,15 +90,15 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  Int_BootLoader_Init();
+  //Int_BootLoader_Init();
+  App_BootLoader_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    printf("%d\r\n",uart_rec_full_len);
-    HAL_Delay(5000);
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
