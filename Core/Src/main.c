@@ -18,12 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
+#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Int_BootLoader.h"
+#include "Int_w24c02.h"
 #include "App_BootLoader.h"
 /* USER CODE END Includes */
 
@@ -89,9 +92,19 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_I2C2_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  //Int_BootLoader_Init();
-  App_BootLoader_Init();
+  
+  // 1.检查更新状态
+  App_BootLoader_Check_Update();
+
+  // 2.根据状态进行更新
+  App_BootLoader_Update();
+
+  // 3.跳转到APP
+  App_BootLoader_Jump_to_App();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
