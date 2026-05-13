@@ -26,8 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Int_BootLoader.h"
-#include "Int_w24c02.h"
-#include "App_BootLoader.h"
+#include "App_Reset.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,7 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define RESET_BASE (FLASH_BASE | 0x4000)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -70,6 +69,12 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  
+  // 作为跳转过来的程序,一定要记得加重定向中断向量表
+  SCB->VTOR = RESET_BASE;
+
+  // 重新打开中断
+  __enable_irq();
 
   /* USER CODE END 1 */
 
@@ -95,15 +100,11 @@ int main(void)
   MX_I2C2_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  
-  // 1.检查更新状态
-  App_BootLoader_Check_Update();
 
-  // 2.根据状态进行更新
-  App_BootLoader_Update();
+  App_BootLoader_Init();
 
-  // 3.跳转到APP
-  App_BootLoader_Jump_to_App();
+  // 点亮LED2 表示正在运行出厂默认程序
+  HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 
@@ -111,7 +112,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    
+    App_BootLoader_Process();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
