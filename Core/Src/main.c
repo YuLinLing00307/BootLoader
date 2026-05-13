@@ -99,10 +99,13 @@ int main(void)
   // 1.检查更新状态
   App_BootLoader_Check_Update();
 
-  // 2.根据状态进行更新
+  // 2.判断是否进入默认程序,即恢复出厂设置
+  App_BootLoader_Check_Default();
+
+  // 3.根据状态进行更新
   App_BootLoader_Update();
 
-  // 3.跳转到APP
+  // 4.跳转到APP
   App_BootLoader_Jump_to_App();
 
   /* USER CODE END 2 */

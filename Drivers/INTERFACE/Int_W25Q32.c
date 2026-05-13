@@ -2,7 +2,7 @@
 
 void Int_W25Q32_Start(void)
 {
-    HAL_GPIO_WritePin(W25Q32_CS_GPIO_Port,W25Q32_CS_Pin,GPIO_PIN_RESET)
+    HAL_GPIO_WritePin(W25Q32_CS_GPIO_Port,W25Q32_CS_Pin,GPIO_PIN_RESET);
 }
 
 void Int_W25Q32_Stop(void)
