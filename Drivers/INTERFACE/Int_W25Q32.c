@@ -149,3 +149,27 @@ void Int_W25Q32_Erase_Sector(uint8_t Block,uint8_t Sector)
     Int_W25Q32_Stop();
 }
 
+void Int_W25Q32_Read_Data_Uint32(uint32_t addr,uint8_t* buff,uint8_t len)
+{
+        // 1.等待忙状态结束
+    Int_W25Q32_Wait_Busy();
+
+    // 2.拉低片选
+    Int_W25Q32_Start();
+
+    // 3.发送读取指令,接收返回的数据
+    Int_W25Q32_Write_Byte(W25Q32_READ_COMMAND);
+    Int_W25Q32_Write_Byte((uint8_t)((addr >> 16) & 0XFF));
+    Int_W25Q32_Write_Byte((uint8_t)((addr >> 8 ) & 0XFF));
+    Int_W25Q32_Write_Byte((uint8_t)((addr >> 0 ) & 0XFF));
+
+    for(uint32_t i;i<len;i++)
+    {
+        buff[i] = Int_W25Q32_Read_Byte();
+    }
+    
+    // 4.拉高片选
+    Int_W25Q32_Stop();
+}
+
+

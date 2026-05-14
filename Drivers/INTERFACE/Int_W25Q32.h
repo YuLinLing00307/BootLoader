@@ -18,6 +18,7 @@ void Int_W25Q32_Start(void);
 void Int_W25Q32_Stop(void);
 void Int_W25Q32_Write_Byte(uint8_t data);
 uint8_t Int_W25Q32_Read_Byte(void);
+void Int_W25Q32_Read_Data_Uint32(uint32_t addr,uint8_t* buff,uint8_t len);
 
 // 实际ADDR共有24位 0x000000 -> 0x3FF FFF 一次擦除4096字节即0xFFF，一次写入256字节
 //void Int_W25Q32_Read_Data(uint32_t addr,uint8_t* data,uint8_t len);
